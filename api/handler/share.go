@@ -10,15 +10,11 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/omurilo/shareless/pkg/cipher"
-	"github.com/omurilo/shareless/web"
 	"github.com/redis/go-redis/v9"
-
-	"log"
 )
 
 type Duration string
@@ -63,8 +59,6 @@ func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-
-	log.Println(body)
 
 	err = validateDuration(body.Duration)
 	if err != nil {
@@ -111,12 +105,6 @@ func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "An error has ocurred on generate a shareless", http.StatusInternalServerError)
-	}
-
-	if strings.Contains(r.Header.Get("Accept"), "text/html") {
-		w.Header().Set("Content-Type", "text/html")
-		web.Share(w, map[string]string{"host": shared.Host, "id": shared.Id.String(), "token": shared.Token})
-		return
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -1,14 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shareless - The Application to Secure Share Password with Storageless Architecture</title>
-  </head>
-  <body>
-    <div>
-      <textarea name="shared">{{ .Text }}</textarea>
-    </div>
-  </body>
+    <title>Shareless - Generate Share Link</title>
+    <meta name="description" content="Shareless is an application that enables secure secret sharing without storing the data. Use temporary tokens to access your encrypted secrets.">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .secret-box {
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-top: 20px;
+            white-space: pre-wrap; /* Preserve whitespace for the secret */
+            word-wrap: break-word; /* Allow line breaking */
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        .copy-button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Your Shared Secret</h1>
+    <div class="secret-box">{{.Text}}</div>
+    <button class="copy-button" onclick="copyToClipboard('{{.Text}}')">Copy Secret</button>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Secret copied to clipboard!');
+            });
+        }
+    </script>
+</body>
 </html>
