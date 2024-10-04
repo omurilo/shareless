@@ -87,3 +87,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 Feel free to make any adjustments as needed!
 ```
+
+### Inspiration
+This project is inspired by https://passshare.me, a project of diogo.dev shared on bluesky.

@@ -24,7 +24,7 @@
             margin-top: 10px;
             font-weight: bold;
             color: #555;
-            display: block; /* Ensure labels are on their own line */
+            display: block;
         }
         textarea, select, button {
             width: 100%;
@@ -51,12 +51,12 @@
             background-color: #0056b3;
         }
         #result {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #e9ecef;
-            border-radius: 4px;
-            display: none; /* Initially hidden */
-            word-wrap: break-word; /* Allow line breaking */
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #e9ecef;
+          border-radius: 4px;
+          display: none; 
+          word-wrap: break-word; 
         }
         .result-message {
             color: #333;
@@ -67,8 +67,28 @@
             font-size: 14px;
         }
         .copy-button {
-            margin-top: 10px;
+            padding: 10px 15px;
             background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .popover {
+          position: absolute;
+          background-color: #333;
+          color: #fff;
+          padding: 8px 12px;
+          border-radius: 4px;
+          z-index: 1000;
+          transition: opacity 0.3s ease;
+          opacity: 0; /* Start hidden */
+        }
+        .popover.show {
+          opacity: 1; /* Show when class added */
         }
     </style>
 </head>
@@ -96,6 +116,7 @@
     </form>
 
     <div id="result" class="result-message"></div>
+    <div id="popover" class="popover" style="display: none;">Link copied!</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.2/htmx.min.js"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
@@ -109,24 +130,47 @@
           charCount.textContent = `${remaining} characters remaining`;
       });
 
-      // Show the result div only when there's a result
       document.body.addEventListener('htmx:afterSwap', function (event) {
         if (event.detail.target.id === 'result') {
             const data = JSON.parse(event.detail.xhr.response);
             const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block'; // Show the result div
+            
+            resultDiv.style.display = 'block'; 
             resultDiv.innerHTML = `
-                <p>Your share link:</p>
-                <a href="${data.url}" target="_blank" style="word-wrap: break-word;">${data.url}</a>
-                <button class="copy-button" onclick="copyToClipboard('${data.url}')">Copy Link</button>
+                <label for="shareLink">Your share link:</label>
+                <div style="display: flex; align-items: center;">
+                    <div id="shareLink" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background-color: #e9ecef; overflow-x: auto; white-space: nowrap; cursor: text;">
+                        <span style="display: inline-block; padding-right: 5px;">${data.url}</span>
+                    </div>
+                    <button class="copy-button" style="width: auto; margin-left: 5px; height: 40px; padding: 0 10px;" onclick="copyToClipboard('${data.url}')">Copy</button>
+                </div>
             `;
         }
       });
 
       function copyToClipboard(text) {
-          navigator.clipboard.writeText(text).then(() => {
-              alert('Link copied to clipboard!');
-          });
-      }    </script>
+        navigator.clipboard.writeText(text).then(() => {
+            const popover = document.getElementById('popover');
+            const button = document.querySelector('.copy-button');
+
+            // Position the popover near the button
+            const buttonRect = button.getBoundingClientRect();
+            popover.style.left = `${buttonRect.right + 10}px`;
+            popover.style.top = `${buttonRect.top}px`;
+            popover.style.display = 'block';
+
+            // Show the popover
+            popover.classList.add('show');
+
+            // Hide the popover after 2 seconds
+            setTimeout(() => {
+                popover.classList.remove('show');
+                popover.style.display = 'none';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+      }
+    </script>
 </body>
 </html>

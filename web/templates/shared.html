@@ -42,6 +42,19 @@
         .copy-button:hover {
             background-color: #218838;
         }
+        .popover {
+          position: absolute;
+          background-color: #333;
+          color: #fff;
+          padding: 8px 12px;
+          border-radius: 4px;
+          z-index: 1000;
+          transition: opacity 0.3s ease;
+          opacity: 0; /* Start hidden */
+        }
+        .popover.show {
+          opacity: 1; /* Show when class added */
+        }
     </style>
 </head>
 <body>
@@ -49,13 +62,31 @@
     <h1>Your Shared Secret</h1>
     <div class="secret-box">{{.Text}}</div>
     <button class="copy-button" onclick="copyToClipboard('{{.Text}}')">Copy Secret</button>
-
+    <div id="popover" class="popover" style="display: none;">Link copied!</div>
     <script>
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Secret copied to clipboard!');
-            });
-        }
+        navigator.clipboard.writeText(text).then(() => {
+            const popover = document.getElementById('popover');
+            const button = document.querySelector('.copy-button');
+
+            // Position the popover near the button
+            const buttonRect = button.getBoundingClientRect();
+            popover.style.left = `${buttonRect.right + 10}px`;
+            popover.style.top = `${buttonRect.top}px`;
+            popover.style.display = 'block';
+
+            // Show the popover
+            popover.classList.add('show');
+
+            // Hide the popover after 2 seconds
+            setTimeout(() => {
+                popover.classList.remove('show');
+                popover.style.display = 'none';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+      }
     </script>
 </body>
 </html>
