@@ -66,7 +66,12 @@ go mod tidy
 
 - Start the server:
 ```bash
-go run cmd/shareless/main.go
+make run # make watch // to run in watching mode
+```
+
+- Run in docker-compose (redis included):
+```bash
+make docker-run
 ```
 
 - Access the application at `http://localhost:3000`.

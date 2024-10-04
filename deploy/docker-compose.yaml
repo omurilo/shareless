@@ -6,12 +6,22 @@ services:
       - 6379:6379
     volumes:
       - ./tmp/cache:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
 
   shareless:
     image: omurilo/shareless
     build:
       context: ../
-      dockerfile: ./Dockerfile
+      dockerfile: ./deploy/Dockerfile
+    environment:
+      REDIS_URL: redis:6379
     ports:
       - 3000:3000
+    depends_on:
+      redis:
+        condition: service_healthy
 

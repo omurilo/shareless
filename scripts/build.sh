@@ -5,7 +5,6 @@ set -e
 
 # Build the Go application
 echo "Building the Go application..."
-mkdir -p bin/shareless
-go build -o bin/shareless ./...
+go build -o bin/shareless cmd/shareless/main.go
 
 echo "Build completed successfully!"
