@@ -55,7 +55,7 @@ Used to access a shared secret.
 
 - Clone the repository:
 ```bash
-git clone https://github.com/yourusername/shareless.git
+git clone https://github.com/omurilo/shareless.git
 cd shareless
 ```
 
@@ -66,7 +66,7 @@ go mod tidy
 
 - Start the server:
 ```bash
-go run main.go
+go run cmd/shareless/main.go
 ```
 
 - Access the application at `http://localhost:3000`.
@@ -77,7 +77,7 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ### License
 
-This project is licensed under the MIT License - see the [#LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ```
 Feel free to make any adjustments as needed!
