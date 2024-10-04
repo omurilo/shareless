@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+    <title>Shareless - The Application to Secure Share Password with Storageless Architecture</title>
+  </head>
+  <body>
+    <p>Share a secret string (like password) with a security of not its saved on server</p>
+    <form hx-post="/share" hx-headers='{"Accept": "text/html"}' hx-swap="innerHTML" hx-ext="json-enc" hx-on::after-request="this.reset()" hx-target="#share">
+      <textarea type="text" name="text" placeholder="Insert here your text to be shared" required></textarea>
+      <input type="checkbox" name="expire_on_opened">Expire secret after this opened?</input>
+      <select name="duration">
+        <option value="5m" name="5m">5 minutes</option>
+        <option value="1h" name="1h">1 hour</option>
+        <option value="3h" name="3h">3 hours</option>
+        <option value="5h" name="5h">5 hours</option>
+        <option value="7h" name="7h">7 hours</option>
+        <option value="24h" name="24h">1 day</option>
+      </select>
+      <button type="submit">Enviar</button>
+    </form>
+    <div id="share"></div>
+  </body>
+</html>
