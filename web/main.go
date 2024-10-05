@@ -19,3 +19,8 @@ func About(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("web/templates/about.html")
 	tmpl.Execute(w, nil)
 }
+
+func Privacy(w http.ResponseWriter, r *http.Request) {
+	tmpl, _ := template.ParseFiles("web/templates/privacy.html")
+	tmpl.Execute(w, nil)
+}
