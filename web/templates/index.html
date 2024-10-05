@@ -53,7 +53,6 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 450px;
-            <!-- text-align: center; -->
         }
         form h2 {
             margin-bottom: 20px;
@@ -171,6 +170,26 @@
             margin-bottom: 20px;
             text-align: center;
         }
+        .copy-button, .share-button {
+          width: auto;
+          margin-left: 5px;
+          height: 40px;
+          padding: 0 10px;
+        }
+        @media (max-width: 600px) {
+          #result {
+            max-width: calc(100vw - 40px);
+            padding: 10px;
+            margin: 20px;
+          }
+          form {
+              padding: 20px;
+              max-width: calc(100vw - 50px);
+          }
+          form h2 {
+              font-size: 22px; 
+          }
+        } 
     </style>
 </head>
 <body>
@@ -222,46 +241,66 @@
       const maxLength = textarea.maxLength;
 
       textarea.addEventListener('input', function() {
-          const remaining = maxLength - textarea.value.length;
-          charCount.textContent = `${remaining} characters remaining`;
+        const remaining = maxLength - textarea.value.length;
+        charCount.textContent = `${remaining} characters remaining`;
       });
 
-      document.body.addEventListener('htmx:afterSwap', function (event) {
+      document.body.addEventListener('htmx:afterSwap', function(event) {
         if (event.detail.target.id === 'result') {
-            const data = JSON.parse(event.detail.xhr.response);
-            const resultDiv = document.getElementById('result');
-            
-            resultDiv.style.display = 'block'; 
-            resultDiv.innerHTML = `
-                <label for="shareLink">Your share link:</label>
-                <div style="display: flex; align-items: center;">
-                    <div id="shareLink" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background-color: #e9ecef; overflow-x: auto; white-space: nowrap; cursor: text;">
-                        <span style="display: inline-block; padding-right: 5px;">${data.url}</span>
+          const data = JSON.parse(event.detail.xhr.response);
+          const resultDiv = document.getElementById('result');
+
+          resultDiv.style.display = 'block';
+          resultDiv.innerHTML = `
+                      <label for="shareLink">Your share link:</label>
+                      <div style="display: flex; align-items: center;">
+                          <div id="shareLink" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background-color: #e9ecef; overflow-x: auto; white-space: nowrap; cursor: text;">
+                              <span style="display: inline-block; padding-right: 5px;">${data.url}</span>
+                          </div>
+                        <button class="copy-button">${navigator.canShare ? 'Share' : 'Copy'}</button>
                     </div>
-                    <button class="copy-button" style="width: auto; margin-left: 5px; height: 40px; padding: 0 10px;" onclick="copyToClipboard('${data.url}')">Copy</button>
-                </div>
-            `;
+                  `;
+
+          const copyBtn = document.querySelector('.copy-button')
+
+          copyBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const shareData = {
+              title: 'Shareless Secret',
+              text: 'Here is a secret link I want to share with you!',
+              url: data.url,
+            };
+
+          if (!navigator.canShare || !navigator.canShare(shareData)) {
+            copyToClipboard(data.url)
+            return
+          }
+
+          navigator.share(shareData)
+            .catch((error) => console.log('Error sharing:', error));
+          });
         }
       });
 
       function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            const popover = document.getElementById('popover');
-            const button = document.querySelector('.copy-button');
+          const popover = document.getElementById('popover');
+          const button = document.querySelector('.copy-button');
 
-            const buttonRect = button.getBoundingClientRect();
-            popover.style.left = `${buttonRect.right + 10}px`;
-            popover.style.top = `${buttonRect.top}px`;
-            popover.style.display = 'block';
+          const buttonRect = button.getBoundingClientRect();
+          popover.style.left = `${buttonRect.right + 10}px`;
+          popover.style.top = `${buttonRect.top}px`;
+          popover.style.display = 'block';
 
-            popover.classList.add('show');
+          popover.classList.add('show');
 
-            setTimeout(() => {
-                popover.classList.remove('show');
-                popover.style.display = 'none';
-            }, 2000);
+          setTimeout(() => {
+            popover.classList.remove('show');
+            popover.style.display = 'none';
+          }, 2000);
         }).catch(err => {
-            console.error('Failed to copy: ', err);
+          console.error('Failed to copy: ', err);
         });
       }
     </script>
