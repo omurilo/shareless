@@ -17,6 +17,7 @@ func NewHttpServer(sh *handler.ShareHandler, shr *handler.SharedHandler) *HttpSe
 	mux.HandleFunc("GET /shared/{id}", shr.Shared)
 	mux.HandleFunc("POST /share", sh.Share)
   mux.HandleFunc("GET /", web.Shareless)
+  mux.HandleFunc("GET /about", web.About)
 
 	return &HttpServer{mux}
 }

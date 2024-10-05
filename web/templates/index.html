@@ -5,28 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shareless - Generate Share Link</title>
     <meta name="description" content="Shareless is an application that enables secure secret sharing without storing the data. Use temporary tokens to access your encrypted secrets.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            background-color: white;
-        }
-        h1 {
-            text-align: center;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
             color: #333;
+        }
+        header {
+            background-color: #4a90e2;
+            padding: 15px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: flex-end;
+        }
+        nav ul li {
+            margin-left: 30px;
+        }
+        nav ul li a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        nav ul li a:hover {
+            color: #d1e7ff;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 70px);
+            padding: 20px;
+            flex-direction: column;
+        }
+        form {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            <!-- text-align: center; -->
+        }
+        form h2 {
+            margin-bottom: 20px;
+            color: #4a90e2; 
+            font-size: 26px;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            resize: none;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        textarea:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #357ABD;
+            transform: translateY(-1px);
         }
         label {
             margin-top: 10px;
+            margin-bottom: 10px;
             font-weight: bold;
             color: #555;
             display: block;
         }
-        textarea, select, button {
+        select, button {
             width: 100%;
             margin: 10px 0;
             padding: 12px;
@@ -40,23 +111,14 @@
             border-color: #007bff;
             outline: none;
         }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
         #result {
           margin-top: 20px;
           padding: 15px;
           background-color: #e9ecef;
-          border-radius: 4px;
+          border-radius: 10px;
           display: none; 
-          word-wrap: break-word; 
+          word-wrap: break-word;
+          max-width: 500px;
         }
         .result-message {
             color: #333;
@@ -68,14 +130,14 @@
         }
         .copy-button {
             padding: 10px 15px;
-            background-color: #28a745;
+            background-color: #4a90e2;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
         }
         .copy-button:hover {
-            background-color: #218838;
+            background-color: #357ABD;
         }
         .popover {
           position: absolute;
@@ -85,21 +147,50 @@
           border-radius: 4px;
           z-index: 1000;
           transition: opacity 0.3s ease;
-          opacity: 0; /* Start hidden */
+          opacity: 0; 
         }
         .popover.show {
-          opacity: 1; /* Show when class added */
+          opacity: 1; 
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #777;
+        }
+        .footer a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .icon {
+            font-size: 50px;
+            color: #4a90e2;
+            margin-bottom: 20px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h1>Generate Share Link</h1>
+  <header>
+    <nav>
+      <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main class="container">
     <form id="shareForm" hx-headers='{"Accept": "text/html"}' hx-post="/share" hx-target="#result" hx-swap="innerHTML" hx-ext="json-enc" hx-on::after-request="this.reset()">
+      <div class="icon"><i class="fas fa-lock"></i></div>
+        <h2>Share Your Secret</h2>
         <label for="secretText">Secret Text:</label>
         <textarea id="secretText" name="text" rows="4" required placeholder="Enter your secret here..." maxLength="2500"></textarea>
         <div class="char-count" id="charCount">2500 characters remaining</div>
 
-        <label for="expireOnOpened">Expire After Opening:</label>
+        <label for="expireOnOpened" style="display: inline-block;">Expire After Opening:</label>
         <input type="checkbox" id="expireOnOpened" name="expire_on_opened" style="margin-bottom: 15px;" />
 
         <label for="duration">Duration:</label>
@@ -117,6 +208,11 @@
 
     <div id="result" class="result-message"></div>
     <div id="popover" class="popover" style="display: none;">Link copied!</div>
+  </main>
+  <footer class="footer">
+    <p>&copy; 2024 Shareless. All rights reserved.</p>
+    <p>This project is licensed under the MIT License.</p>
+</footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.2/htmx.min.js"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
@@ -153,16 +249,13 @@
             const popover = document.getElementById('popover');
             const button = document.querySelector('.copy-button');
 
-            // Position the popover near the button
             const buttonRect = button.getBoundingClientRect();
             popover.style.left = `${buttonRect.right + 10}px`;
             popover.style.top = `${buttonRect.top}px`;
             popover.style.display = 'block';
 
-            // Show the popover
             popover.classList.add('show');
 
-            // Hide the popover after 2 seconds
             setTimeout(() => {
                 popover.classList.remove('show');
                 popover.style.display = 'none';
