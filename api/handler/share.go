@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -43,6 +44,13 @@ type SharedDocument struct {
 
 type ShareHandler struct {
 	db *redis.Client
+}
+
+func init() {
+	_, ok := os.LookupEnv("HOST_URL")
+	if !ok {
+		log.Println("HOST_URL is not defined, consider setting to get a full shareable link!")
+	}
 }
 
 func NewShareHandler(db *redis.Client) *ShareHandler {
