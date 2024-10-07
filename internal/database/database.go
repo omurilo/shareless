@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	redis "github.com/redis/go-redis/v9"
 )
@@ -30,14 +31,19 @@ func getEnv(key string, defaultValue string) string {
 	return defaultValue
 }
 
-func getHostPortWithDefaults() (string, int) {
+func getHostPortWithDefaults() (string, string, int) {
 	if _, ok := os.LookupEnv("REDIS_URL"); !ok {
 		log.Println("REDIS_URL is not present, using localhost:6379")
 	}
-	redisUrl := getEnv("REDIS_URL", "localhost:6379")
+
+	redisUrl := getEnv("REDIS_URL", "redis://localhost:6379")
+	if !strings.Contains(redisUrl, "://") {
+		redisUrl = "redis://" + redisUrl
+	}
+
 	u, err := url.Parse(redisUrl)
 	if err != nil {
-		return "localhost:6379", 0
+		return "localhost", "6379", 0
 	}
 
 	host, port, err := net.SplitHostPort(u.Host)
@@ -60,25 +66,27 @@ func getHostPortWithDefaults() (string, int) {
 		db = 0
 	}
 
-	addr := net.JoinHostPort(host, port)
-
-	return addr, db
+	return host, port, db
 }
 
 func getRedisConfig() *redis.Options {
 	isTLS, err := strconv.ParseBool(os.Getenv("ENABLE_TLS"))
-  if err != nil {
-    isTLS = false
-  }
-	addr, db := getHostPortWithDefaults()
+	insecureSkipVerify, err := strconv.ParseBool(os.Getenv("ENABLE_INSECURE_SKIP_VERIFY"))
+	if err != nil {
+		isTLS = false
+	}
+	host, port, db := getHostPortWithDefaults()
 
 	opts := &redis.Options{
-		Addr: addr,
+		Addr: net.JoinHostPort(host, port),
 		DB:   db,
 	}
 
 	if isTLS {
-		opts.TLSConfig = &tls.Config{}
+		opts.TLSConfig = &tls.Config{
+			ServerName:         host,
+			InsecureSkipVerify: insecureSkipVerify,
+		}
 	}
 
 	return opts
