@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -13,11 +14,7 @@ import (
 )
 
 func NewDbClient() *redis.Client {
-	addr, db := getHostPortWithDefaults()
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: addr,
-		DB:   db,
-	})
+	redisClient := redis.NewClient(getRedisConfig())
 
 	if err := redisClient.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("Error connecting to Redis: %v", err)
@@ -34,10 +31,13 @@ func getEnv(key string, defaultValue string) string {
 }
 
 func getHostPortWithDefaults() (string, int) {
+	if _, ok := os.LookupEnv("REDIS_URL"); !ok {
+		log.Println("REDIS_URL is not present, using localhost:6379")
+	}
 	redisUrl := getEnv("REDIS_URL", "localhost:6379")
 	u, err := url.Parse(redisUrl)
 	if err != nil {
-    return "localhost:6379", 0
+		return "localhost:6379", 0
 	}
 
 	host, port, err := net.SplitHostPort(u.Host)
@@ -60,7 +60,26 @@ func getHostPortWithDefaults() (string, int) {
 		db = 0
 	}
 
-  addr := net.JoinHostPort(host, port)
+	addr := net.JoinHostPort(host, port)
 
 	return addr, db
+}
+
+func getRedisConfig() *redis.Options {
+	isTLS, err := strconv.ParseBool(os.Getenv("ENABLE_TLS"))
+  if err != nil {
+    isTLS = false
+  }
+	addr, db := getHostPortWithDefaults()
+
+	opts := &redis.Options{
+		Addr: addr,
+		DB:   db,
+	}
+
+	if isTLS {
+		opts.TLSConfig = &tls.Config{}
+	}
+
+	return opts
 }
