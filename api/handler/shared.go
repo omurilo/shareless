@@ -10,6 +10,7 @@ import (
 	"github.com/omurilo/shareless/pkg/cipher"
 	"github.com/omurilo/shareless/web"
 	"github.com/redis/go-redis/v9"
+	"github.com/x-way/crawlerdetect"
 )
 
 type SharedHandler struct {
@@ -23,6 +24,14 @@ func NewSharedHandler(db *redis.Client) *SharedHandler {
 func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	token := r.URL.Query().Get("token")
+
+	uastring := r.Header.Get("User-Agent")
+
+	if crawlerdetect.IsCrawler(uastring) {
+		w.Header().Set("Content-Type", "text/html")
+		web.Shared(w, nil)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
