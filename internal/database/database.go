@@ -28,7 +28,7 @@ func getEnv(key string, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
-  if _, ok := os.LookupEnv("REDIS_URL"); !ok {
+	if _, ok := os.LookupEnv("REDIS_URL"); !ok {
 		log.Printf("%s is not defined, using %s instead\n", key, defaultValue)
 	}
 	return defaultValue
