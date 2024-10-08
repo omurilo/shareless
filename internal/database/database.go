@@ -18,7 +18,7 @@ func NewDbClient() *redis.Client {
 	redisClient := redis.NewClient(getRedisConfig())
 
 	if err := redisClient.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("Error connecting to Redis: %v", err)
+		log.Fatalf("Error connecting to Redis: %+v", err)
 	}
 
 	return redisClient
@@ -28,14 +28,13 @@ func getEnv(key string, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
+	if _, ok := os.LookupEnv("REDIS_URL"); !ok {
+		log.Printf("%s is not defined, using %s instead\n", key, defaultValue)
+	}
 	return defaultValue
 }
 
 func getHostPortWithDefaults() (string, string, int) {
-	if _, ok := os.LookupEnv("REDIS_URL"); !ok {
-		log.Println("REDIS_URL is not present, using localhost:6379")
-	}
-
 	redisUrl := getEnv("REDIS_URL", "redis://localhost:6379")
 	if !strings.Contains(redisUrl, "://") {
 		redisUrl = "redis://" + redisUrl
