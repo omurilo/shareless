@@ -1,20 +1,16 @@
 package handler
 
 import (
-	"crypto"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
-	"net/url"
+
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/omurilo/shareless/pkg/cipher"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -29,15 +25,16 @@ const (
 )
 
 type ShareInput struct {
-	Text           string   `json:"text"`
 	Duration       Duration `json:"duration"`
 	ExpireOnOpened string   `json:"expire_on_opened"`
+	PublicKey      string   `json:"publicKey"`
+	PrivateKey     string   `json:"privateKey"`
 }
 
 type SharedDocument struct {
 	Id             uuid.UUID `json:"id"`
-	Hash           []byte    `json:"-"`
-	Token          string    `json:"token"`
+	PublicKey      string    `json:"-"`
+	PrivateKey     string    `json:"-"`
 	ExpireOnOpened bool      `json:"-"`
 	Host           string    `json:"host"`
 }
@@ -81,29 +78,15 @@ func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rand.NewSource(time.Now().UnixNano())
-	randomNumber := rand.Intn(1<<52 - 1)
-
-	hash := crypto.SHA256.New()
-	hash.Write([]byte(strconv.FormatInt(int64(randomNumber), 10)))
-	bs := hash.Sum(nil)
-
-	token, err := cipher.Encrypter(body.Text, string(bs))
-
-	if err != nil {
-		http.Error(w, "An error has ocurred when cipher text", http.StatusInternalServerError)
-		return
-	}
-
 	shared := SharedDocument{
 		Id:             uuid.New(),
-		Hash:           bs,
-		Token:          token,
+		PublicKey:      body.PublicKey,
+		PrivateKey:     body.PrivateKey,
 		ExpireOnOpened: body.ExpireOnOpened == "on",
 		Host:           os.Getenv("HOST_URL"),
 	}
 
-	err = s.db.HSet(r.Context(), shared.Id.String(), "hash", shared.Hash, "expire_on_opened", shared.ExpireOnOpened).Err()
+	err = s.db.HSet(r.Context(), shared.Id.String(), "publicKey", shared.PublicKey, "privateKey", shared.PrivateKey, "expire_on_opened", shared.ExpireOnOpened).Err()
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "An error has ocurred on generate a shareless", http.StatusInternalServerError)
@@ -118,7 +101,7 @@ func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"url": fmt.Sprintf("%s/shared/%s?token=%s", shared.Host, shared.Id.String(), url.QueryEscape(shared.Token)),
+		"url": fmt.Sprintf("%s/shared/%s", shared.Host, shared.Id.String()),
 	})
 }
 

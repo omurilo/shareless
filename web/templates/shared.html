@@ -133,10 +133,9 @@
 <div class="container">
     <div class="secret-card">
       <h2>Your Secret</h2>
-      <textarea class="secret-text" id="secretText" readonly>{{.Text}}</textarea>
-      <button class="copy-button" onclick="copyToClipboard('{{.Text}}')">Copy Secret</button>
+      <textarea class="secret-text" id="secretText" readonly></textarea>
+      <button class="copy-button">Copy Secret</button>
       <div id="popover" class="popover" style="display: none;">Secret copied!</div>
-
     </div>
 </div>
 
@@ -147,6 +146,50 @@
 </footer>
 
 <script>
+    window.addEventListener("load", async () => {
+      const url = new URL(window.location);
+      const token = url.searchParams.get("token");
+      const privateKey = "{{.PrivateKey}}"
+
+      const plainText = await decrypt(token, privateKey);
+
+      const textarea = document.querySelector("#secretText");
+      textarea.textContent = plainText;
+
+      const button = document.querySelector(".copy-button");
+      button.addEventListener("click", () => copyToClipboard(plainText));
+    })
+
+    async function decrypt(encryptedText, key) {
+      const algorithm = { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256"};
+      const privateKeyText = JSON.parse(atob(key));
+      const privateKey = await window.crypto.subtle.importKey("jwk", privateKeyText, algorithm, true, ["decrypt"]);
+
+      const decryptedText = await window.crypto.subtle.decrypt(
+        algorithm,
+        privateKey,
+        base64ToArrayBuffer(encryptedText)
+      );
+
+      return getMessageDecoded(decryptedText);
+    }
+
+    function getMessageDecoded(encoded) {
+      const dec = new TextDecoder();
+      return dec.decode(encoded);
+    }
+
+    function base64ToArrayBuffer(base64) {
+      console.log({ base64 })
+      const binary_string = window.atob(base64);
+      const len = binary_string.length;
+      const bytes = new Uint8Array( len );
+      for (let i = 0; i < len; i++)        {
+          bytes[i] = binary_string.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
           const popover = document.getElementById('popover');

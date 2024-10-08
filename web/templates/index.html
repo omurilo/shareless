@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shareless - Generate Share Link</title>
     <meta name="description" content="Shareless is an application that enables secure secret sharing without storing the data. Use temporary tokens to access your encrypted secrets.">
+    <meta
+      name="htmx-config"
+      content='{
+        "responseHandling":[
+            {"code":"204", "swap": false},
+            {"code":"[23]..", "swap": true},
+            {"code":"422", "swap": true},
+            {"code":"[45]..", "swap": false, "error":true},
+            {"code":"...", "swap": true}
+        ]
+      }'
+    />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
@@ -202,7 +214,7 @@
     </nav>
   </header>
   <main class="container">
-    <form id="shareForm" hx-headers='{"Accept": "text/html"}' hx-post="/share" hx-target="#result" hx-swap="innerHTML" hx-ext="json-enc" hx-on::after-request="this.reset()">
+    <form id="shareForm">
       <div class="icon"><i class="fas fa-lock"></i></div>
         <h2>Share Your Secret</h2>
         <label for="secretText">Secret Text:</label>
@@ -222,7 +234,7 @@
             <option value="24h">1 Day</option>
         </select>
 
-        <button type="submit">Generate Link</button>
+        <button hx-post="/share" hx-target="#result" hx-params="not text" hx-swap="innerHTML" hx-ext="encrypt" hx-trigger="click">Generate Link</button>
     </form>
 
     <div id="result" class="result-message"></div>
@@ -241,6 +253,8 @@
       const charCount = document.getElementById('charCount');
       const maxLength = textarea.maxLength;
 
+      let cipherText;
+
       textarea.addEventListener('input', function() {
         const remaining = maxLength - textarea.value.length;
         charCount.textContent = `${remaining} characters remaining`;
@@ -253,10 +267,15 @@
 
           if (!data.url.match(/https?/)) {
             const url = new URL(window.location);
-            const [path, query] = data.url.split("?token=");
-            url.pathname = path;
-            url.search = `?token=${query}`;
+            const [path] = data.url.split("?token=");
+            url.pathname = data.url;
+            url.search = `?token=${encodeURIComponent(cipherText)}`;
             data.url = url;
+          }
+
+          if (typeof data.url === "string") {
+            data.url = new URL(data.url);
+            data.url.search = `?token=${encodeURIComponent(cipherText)}`;
           }
 
           resultDiv.style.display = 'block';
@@ -312,6 +331,73 @@
           console.error('Failed to copy: ', err);
         });
       }
+
+      async function submitForm() {
+        const formValues = htmx.values(htmx.find("#shareForm"))
+
+        const { privateKey, publicKey, encryptedText } = await encrypt(formValues.text);
+
+        cipherText = encryptedText;
+
+        return JSON.stringify({ privateKey, publicKey, duration: formValues.duration, expire_on_opened: formValues.expire_on_opened })
+      }
+
+      async function encrypt(text) {
+        const algorithm = { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256"}
+        const key = await window.crypto.subtle.generateKey(algorithm, true, ["encrypt", "decrypt"]);
+        const publicKey = await crypto.subtle.exportKey("jwk", key.publicKey);
+        const privateKey = await crypto.subtle.exportKey("jwk", key.privateKey);
+
+        const encryptData = {
+          publicKey: btoa(JSON.stringify(publicKey)),
+          privateKey: btoa(JSON.stringify(privateKey)),
+        };
+
+        const encoded = getMessageEncoding(text);
+
+        const encryptedText = await window.crypto.subtle.encrypt(
+          algorithm,
+          key.publicKey,
+          encoded
+        );
+
+        return { ...encryptData, encryptedText: arrayBufferToBase64(encryptedText) };
+      }
+
+      function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+      }
+
+      function getMessageEncoding(text) {
+        const enc = new TextEncoder();
+        return enc.encode(text);
+      }
+
+      htmx.defineExtension('encrypt', {
+        onEvent: function (name, evt) {
+          console.log(name)
+          if (name === "htmx:configRequest") {
+            evt.detail.headers['Content-Type'] = "application/json"
+          }
+          if (name === "htmx:confirm") {
+            evt.preventDefault()
+            submitForm().then(data => {
+              evt.detail.elt.parameters = data;
+              evt.detail.issueRequest();
+            })
+          }
+        },
+        encodeParameters: function(xhr, parameters, elt) {
+          xhr.overrideMimeType('text/json')
+          return elt.parameters;
+        }
+      })
     </script>
 </body>
 </html>

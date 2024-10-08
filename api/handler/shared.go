@@ -2,12 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
-	"github.com/omurilo/shareless/pkg/cipher"
 	"github.com/omurilo/shareless/web"
 	"github.com/redis/go-redis/v9"
 	"github.com/x-way/crawlerdetect"
@@ -23,7 +21,6 @@ func NewSharedHandler(db *redis.Client) *SharedHandler {
 
 func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	token := r.URL.Query().Get("token")
 
 	uastring := r.Header.Get("User-Agent")
 
@@ -35,8 +32,8 @@ func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	hash := s.db.HGet(r.Context(), id, "hash")
-	if hash.Err() != nil {
+	privateKey := s.db.HGet(r.Context(), id, "privateKey")
+	if privateKey.Err() != nil {
 		http.Error(w, "The document not found or its expired", http.StatusNotFound)
 		return
 	}
@@ -54,19 +51,12 @@ func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	plainText, err := cipher.Decrypter(token, hash.Val())
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "The token was sent is invalid", http.StatusUnprocessableEntity)
-		return
-	}
-
 	if strings.Contains(r.Header.Get("Accept"), "text/html") {
 		w.Header().Set("Content-Type", "text/html")
-		web.Shared(w, map[string]string{"Text": plainText})
+		web.Shared(w, map[string]string{"PrivateKey": privateKey.Val()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"text": plainText})
+	json.NewEncoder(w).Encode(map[string]string{"privateKey": privateKey.Val()})
 }
