@@ -12,13 +12,21 @@ build:
 run:
 	@go run cmd/shareless/main.go
 
+docker-db:
+	@if docker compose -f deploy/docker-compose.yaml up redis -d >/dev/null; then \
+		: ; \
+	else \
+		echo "Falling back to Docker Compose V1"; \
+		docker-compose up redis; \
+	fi
+
 # Create DB container
 docker-run:
 	@if docker compose -f deploy/docker-compose.yaml up --build >/dev/null; then \
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up; \
+		docker-compose up --build; \
 	fi
 
 # Shutdown DB container

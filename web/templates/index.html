@@ -217,7 +217,6 @@
             <option value="5m">5 Minutes</option>
             <option value="1h">1 Hour</option>
             <option value="3h">3 Hours</option>
-            <option value="5h">5 Hours</option>
             <option value="7h">7 Hours</option>
             <option value="24h">1 Day</option>
         </select>
@@ -259,6 +258,12 @@
             data.url = url;
           }
 
+          const shareData = {
+            title: 'Shareless Secret',
+            text: 'Here is a secret link I want to share with you!',
+            url: data.url,
+          };
+
           resultDiv.style.display = 'block';
           resultDiv.innerHTML = `
                       <label for="shareLink">Your share link:</label>
@@ -266,28 +271,26 @@
                           <div id="shareLink" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background-color: #e9ecef; overflow-x: auto; white-space: nowrap; cursor: text;">
                               <span style="display: inline-block; padding-right: 5px;">${data.url}</span>
                           </div>
-                        <button class="copy-button">${navigator.canShare ? 'Share' : 'Copy'}</button>
+                        <button class="copy-button">Copy</button>
+                        ${navigator.canShare && navigator.canShare(shareData) ? '<button class="share-button">Share</button>' : ''}
                     </div>
                   `;
 
           const copyBtn = document.querySelector('.copy-button')
+          const shareBtn = document.querySelector('.share-button')
+
+          if (shareBtn) {
+            shareBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+
+              navigator.share(shareData)
+                .catch((error) => console.log('Error sharing:', error));
+            });
+          }
 
           copyBtn.addEventListener('click', function(e) {
             e.preventDefault();
-
-            const shareData = {
-              title: 'Shareless Secret',
-              text: 'Here is a secret link I want to share with you!',
-              url: data.url,
-            };
-
-          if (!navigator.canShare || !navigator.canShare(shareData)) {
             copyToClipboard(data.url)
-            return
-          }
-
-          navigator.share(shareData)
-            .catch((error) => console.log('Error sharing:', error));
           });
         }
       });
