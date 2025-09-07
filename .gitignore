@@ -1,6 +1,7 @@
 deploy/tmp
 bin
 tmp
+dist/
 
 *.exe
 *.exe~

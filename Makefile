@@ -17,7 +17,7 @@ docker-db:
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up redis; \
+		docker compose up redis; \
 	fi
 
 # Create DB container
@@ -26,7 +26,7 @@ docker-run:
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up --build; \
+		docker compose up --build; \
 	fi
 
 # Shutdown DB container
@@ -35,7 +35,7 @@ docker-down:
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose down; \
+		docker compose down; \
 	fi
 
 # Clean up build artifacts
