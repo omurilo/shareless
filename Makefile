@@ -6,7 +6,7 @@ COMMIT_HASH := $(shell git rev-parse --short HEAD)
 # Build the Go application
 build:
 	@echo "Building the Go application..."
-	@bash scripts/build.sh
+	@CGO_ENABLED=0 go build -o bin/shareless cmd/shareless/main.go
 
 # Run the application
 run:
@@ -17,7 +17,7 @@ docker-db:
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up redis; \
+		docker-compose -f deploy/docker-compose.yaml up redis; \
 	fi
 
 # Create DB container
@@ -26,7 +26,7 @@ docker-run:
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up --build; \
+		docker-compose -f deploy/docker-compose.yaml up --build; \
 	fi
 
 # Shutdown DB container
@@ -35,7 +35,7 @@ docker-down:
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose down; \
+		docker-compose -f deploy/docker-compose.yaml down; \
 	fi
 
 # Clean up build artifacts
