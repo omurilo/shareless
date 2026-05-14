@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -15,6 +14,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/omurilo/shareless/pkg/cipher"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type Duration string
@@ -42,11 +44,18 @@ type SharedDocument struct {
 }
 
 type ShareHandler struct {
-	db *redis.Client
+	db            *redis.Client
+	sharesCreated metric.Int64Counter
 }
 
 func NewShareHandler(db *redis.Client) *ShareHandler {
-	return &ShareHandler{db}
+	meter := otel.GetMeterProvider().Meter("github.com/omurilo/shareless")
+	sharesCreated, _ := meter.Int64Counter(
+		"shareless.shares.created",
+		metric.WithDescription("Total number of shares created"),
+		metric.WithUnit("{share}"),
+	)
+	return &ShareHandler{db, sharesCreated}
 }
 
 func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +121,13 @@ func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"url": fmt.Sprintf("%s/shared/%s?token=%s", shared.Host, shared.Id.String(), url.QueryEscape(shared.Token)),
 	})
+
+	s.sharesCreated.Add(r.Context(), 1,
+		metric.WithAttributes(
+			attribute.String("duration", string(body.Duration)),
+			attribute.Bool("expire_on_opened", shared.ExpireOnOpened),
+		),
+	)
 }
 
 func validateDuration(duration Duration) error {
@@ -123,9 +139,7 @@ func validateDuration(duration Duration) error {
 	case OneDay:
 		break
 	default:
-		return errors.New(
-			fmt.Sprintf("Duration is invalid, only valid durations is: %v", []Duration{FiveMinutes, OneHour, ThreeHours, SevenHours, OneDay}),
-		)
+		return fmt.Errorf("Duration is invalid, only valid durations is: %v", []Duration{FiveMinutes, OneHour, ThreeHours, SevenHours, OneDay})
 	}
 
 	return nil
