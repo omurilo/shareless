@@ -34,7 +34,8 @@ func Setup(ctx context.Context) (shutdown func(context.Context) error, err error
 			semconv.ServiceVersion(serviceVersion),
 		),
 		resource.WithHost(),
-		resource.WithProcess(),
+		resource.WithProcessPID(),
+		resource.WithProcessExecutableName(),
 	)
 	if err != nil {
 		return nil, err
