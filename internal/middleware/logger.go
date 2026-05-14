@@ -27,7 +27,7 @@ func Logger(next http.Handler) http.Handler {
 
 		span := trace.SpanFromContext(r.Context()).SpanContext()
 
-		attrs := []any{
+		attrs := []slog.Attr{
 			slog.String("method", r.Method),
 			slog.String("path", r.URL.Path),
 			slog.Int("status", rw.status),
@@ -41,6 +41,6 @@ func Logger(next http.Handler) http.Handler {
 			)
 		}
 
-		slog.Info("request", attrs...)
+		slog.LogAttrs(r.Context(), slog.LevelInfo, "request", attrs...)
 	})
 }
