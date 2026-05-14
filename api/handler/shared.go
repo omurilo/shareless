@@ -2,8 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -60,13 +59,13 @@ func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
 	if expire.Val() == "1" {
 		expireCmd := s.db.Expire(r.Context(), id, 0)
 		if expireCmd.Err() != nil {
-			log.Printf("Error when expire secret: %v\n", id)
+			slog.ErrorContext(r.Context(), "failed to expire secret", slog.String("id", id))
 		}
 	}
 
 	plainText, err := cipher.Decrypter(token, hash.Val())
 	if err != nil {
-		fmt.Println(err)
+		slog.ErrorContext(r.Context(), "failed to decrypt share", slog.Any("error", err))
 		http.Error(w, "The token was sent is invalid", http.StatusUnprocessableEntity)
 		return
 	}
