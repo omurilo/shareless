@@ -11,14 +11,24 @@ import (
 	"github.com/omurilo/shareless/web"
 	"github.com/redis/go-redis/v9"
 	"github.com/x-way/crawlerdetect"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type SharedHandler struct {
-	db *redis.Client
+	db           *redis.Client
+	sharesViewed metric.Int64Counter
 }
 
 func NewSharedHandler(db *redis.Client) *SharedHandler {
-	return &SharedHandler{db}
+	meter := otel.GetMeterProvider().Meter("github.com/omurilo/shareless")
+	sharesViewed, _ := meter.Int64Counter(
+		"shareless.shares.viewed",
+		metric.WithDescription("Total number of shares viewed"),
+		metric.WithUnit("{view}"),
+	)
+	return &SharedHandler{db, sharesViewed}
 }
 
 func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
@@ -64,9 +74,11 @@ func (s *SharedHandler) Shared(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(r.Header.Get("Accept"), "text/html") {
 		w.Header().Set("Content-Type", "text/html")
 		web.Shared(w, map[string]string{"Text": plainText})
+		s.sharesViewed.Add(r.Context(), 1, metric.WithAttributes(attribute.Bool("expire_on_opened", expire.Val() == "1")))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"text": plainText})
+	s.sharesViewed.Add(r.Context(), 1, metric.WithAttributes(attribute.Bool("expire_on_opened", expire.Val() == "1")))
 }

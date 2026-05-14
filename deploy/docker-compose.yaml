@@ -12,6 +12,25 @@ services:
       timeout: 3s
       retries: 5
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - 4318:4318   # OTLP HTTP receiver
+      - 4317:4317   # OTLP gRPC receiver
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - 16686:16686  # Jaeger UI
+      - 14250:14250  # gRPC
+
   shareless:
     image: omurilo/shareless
     build:
@@ -19,9 +38,13 @@ services:
       dockerfile: ./deploy/Dockerfile
     environment:
       REDIS_URL: redis:6379
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: shareless
     ports:
       - 3000:3000
     depends_on:
       redis:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
 
