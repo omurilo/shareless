@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -106,13 +107,13 @@ func (s *ShareHandler) Share(w http.ResponseWriter, r *http.Request) {
 
 	err = s.db.HSet(r.Context(), shared.Id.String(), "hash", shared.Hash, "expire_on_opened", shared.ExpireOnOpened).Err()
 	if err != nil {
-		fmt.Println(err)
+		slog.ErrorContext(r.Context(), "failed to store share", slog.Any("error", err))
 		http.Error(w, "An error has ocurred on generate a shareless", http.StatusInternalServerError)
 	}
 
 	err = s.db.Expire(r.Context(), shared.Id.String(), duration).Err()
 	if err != nil {
-		fmt.Println(err)
+		slog.ErrorContext(r.Context(), "failed to set share expiration", slog.Any("error", err))
 		http.Error(w, "An error has ocurred on generate a shareless", http.StatusInternalServerError)
 	}
 

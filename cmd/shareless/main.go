@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,6 +23,8 @@ func main() {
 	if err != nil {
 		log.Println("Failed to load .env file")
 	}
+
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
 	PORT, ok := os.LookupEnv("PORT")
 	if !ok {
