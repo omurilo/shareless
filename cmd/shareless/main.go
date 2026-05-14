@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -21,7 +20,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Failed to load .env file")
+		slog.Warn("Failed to load .env file")
 	}
 
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -36,13 +35,13 @@ func main() {
 
 	shutdown, err := telemetry.Setup(ctx)
 	if err != nil {
-		log.Printf("Failed to setup telemetry: %v", err)
+		slog.Error("Failed to setup telemetry", slog.Any("error", err))
 	} else {
 		defer func() {
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := shutdown(shutdownCtx); err != nil {
-				log.Printf("Failed to shutdown telemetry: %v", err)
+				slog.Error("Failed to shutdown telemetry", slog.Any("error", err))
 			}
 		}()
 	}
@@ -53,6 +52,6 @@ func main() {
 
 	httpServer := server.NewHttpServer(sh, shr)
 
-	log.Printf("Executing server on port: %s", PORT)
+	slog.Info("Executing server", slog.String("port", PORT))
 	panic(http.ListenAndServe(fmt.Sprintf(":%s", PORT), httpServer.Instance))
 }
